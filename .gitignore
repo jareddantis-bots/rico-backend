@@ -127,3 +127,16 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Config file
+config.yml
+
+# Docker
+docker-compose.yml
+
+# IDE
+.idea
+.vscode
+
+# macOS
+**/.DS_Store
