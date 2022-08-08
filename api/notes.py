@@ -10,60 +10,49 @@ def create_note():
     # Check request body
     try:
         for_guild = request.json['for_guild']
-        sender_details = request.json['sender']
-        recipient_details = request.json['recipient']
-        sender_id = sender_details['id']
-        recipient_id = recipient_details['id']
+        sender_id = request.json['sender']
+        recipient_id = request.json['recipient']
         note_type = request.json['type']
         title = request.json['title']
-
-        # Optional args
         url = request.json.get('url', '')
-        sender_name = sender_details.get('name', '')
-        sender_discriminator = sender_details.get('discriminator', '')
-        recipient_name = recipient_details.get('name', '')
-        recipient_discriminator = recipient_details.get('discriminator', '')
+
+        if not isinstance(for_guild, bool):
+            raise ValueError('for_guild must be a boolean')
+        if not isinstance(sender_id, int):
+            raise ValueError('sender must be an integer')
+        if not isinstance(recipient_id, int):
+            raise ValueError('recipient must be an integer')
+        if not isinstance(note_type, str):
+            raise ValueError('type must be a string')
+        if not isinstance(title, str) or title == '':
+            raise ValueError('title must be a non-empty string')
     except KeyError as e:
         return {
             'success': False,
             'error': f'Missing key in request body: {e}'
         }, 400
+    except ValueError as e:
+        return {
+            'success': False,
+            'error': f'Bad value: {e}'
+        }, 400
 
     # Check if the sender exists in the user database
     sender = User.query.get(sender_id)
     if sender is None:
-        if not sender_name or not sender_discriminator:
-            return {
-                'success': False,
-                'error': 'Sender does not exist in database, and their given details are incomplete'
-            }, 400
-
-        # Add user to database
-        sender = User(
-            id=sender_id,
-            username=sender_name,
-            discriminator=sender_discriminator
-        )
-        db.session.add(sender)
-        db.session.commit()
+        return {
+            'success': False,
+            'error': 'Sender does not exist in database'
+        }, 404
 
     # Check if the recipient exists in the database
     if for_guild:
         recipient = Guild.query.get(recipient_id)
         if recipient is None:
-            if not recipient_name:
-                return {
-                    'success': False,
-                    'error': 'Guild does not exist in database, and the given details are incomplete'
-                }, 400
-
-            # Add guild to database
-            recipient = Guild(
-                id=recipient_id,
-                name=recipient_name
-            )
-            db.session.add(recipient)
-            db.session.commit()
+            return {
+                'success': False,
+                'error': 'Guild does not exist in database'
+            }, 404
 
         note = GuildNote(
             id=str(uuid7()),
@@ -79,20 +68,10 @@ def create_note():
         if sender_id != recipient_id:
             recipient = User.query.get(recipient_id)
             if recipient is None:
-                if not recipient_name or not recipient_discriminator:
-                    return {
-                       'success': False,
-                       'error': 'Receiver does not exist in database, and their given details are incomplete'
-                    }, 400
-
-                # Add user to database
-                recipient = User(
-                    id=recipient_id,
-                    username=recipient_name,
-                    discriminator=recipient_discriminator
-                )
-                db.session.add(recipient)
-                db.session.commit()
+                return {
+                   'success': False,
+                   'error': 'Recipient does not exist in database'
+                }, 404
 
         note = UserNote(
             id=str(uuid7()),
@@ -118,12 +97,22 @@ def create_note():
 def get_notes():
     # Check request body
     try:
-        is_guild = request.json['guild']
-        owner = request.json['owner']
+        is_guild = request.json['for_guild']
+        owner = request.json['owner_id']
+
+        if not isinstance(is_guild, bool):
+            raise ValueError('for_guild must be a boolean')
+        if not isinstance(owner, int):
+            raise ValueError('owner_id must be an integer')
     except KeyError as e:
         return {
             'success': False,
             'error': f'Missing key in request body: {e}'
+        }, 400
+    except ValueError as e:
+        return {
+            'success': False,
+            'error': f'Bad value: {e}'
         }, 400
 
     # Fetch all notes
