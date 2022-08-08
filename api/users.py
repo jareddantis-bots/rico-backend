@@ -49,6 +49,9 @@ def update_user():
 
     # Commit
     db.session.commit()
+    return {
+        'success': True
+    }, 200
 
 
 @login_required

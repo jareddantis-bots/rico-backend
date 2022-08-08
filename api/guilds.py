@@ -36,7 +36,10 @@ def check_request(req: request, id_only: Optional[bool] = False) -> int | Tuple[
             'error': f'Bad value: {e}'
         }, 400
     else:
-        return guild_id if id_only else guild_id, guild_name, guild_manage_threads
+        if id_only:
+            return guild_id
+        else:
+            return guild_id, guild_name, guild_manage_threads
 
 
 @login_required
@@ -94,6 +97,9 @@ def update_guild():
 
     # Commit
     db.session.commit()
+    return {
+        'success': True
+    }, 200
 
 
 @login_required
