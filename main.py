@@ -36,4 +36,3 @@ install_routes(app)
 # Start Flask app
 if __name__ == '__main__':
     app.run(debug=debug)
-    db.create_all()
