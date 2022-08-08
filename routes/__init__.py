@@ -11,7 +11,7 @@ URL_PREFIX = '/api/v1'
 
 
 def install_routes(app: 'Flask'):
-    app.register_blueprint(bp_excluded_threads, url_prefix=f'{URL_PREFIX}/excluded_threads')
-    app.register_blueprint(bp_guilds, url_prefix=f'{URL_PREFIX}/guilds')
-    app.register_blueprint(bp_notes, url_prefix=f'{URL_PREFIX}/notes')
-    app.register_blueprint(bp_users, url_prefix=f'{URL_PREFIX}/users')
+    app.register_blueprint(bp_excluded_threads, url_prefix=URL_PREFIX)
+    app.register_blueprint(bp_guilds, url_prefix=URL_PREFIX)
+    app.register_blueprint(bp_notes, url_prefix=URL_PREFIX)
+    app.register_blueprint(bp_users, url_prefix=URL_PREFIX)
