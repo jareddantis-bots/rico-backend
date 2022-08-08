@@ -1,9 +1,11 @@
 from database import db
 from datetime import datetime
 from flask import request
+from middleware.auth import login_required
 from models.user import User
 
 
+@login_required
 def update_user():
     # Check request body
     try:
@@ -49,6 +51,7 @@ def update_user():
     db.session.commit()
 
 
+@login_required
 def delete_user():
     # Check request body
     try:
@@ -79,6 +82,7 @@ def delete_user():
     }, 200
 
 
+@login_required
 def update_user_spotify_credentials():
     # Check request body
     try:

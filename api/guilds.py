@@ -1,8 +1,10 @@
 from database import db
 from flask import request
+from middleware.auth import login_required
 from models.guild import Guild
 
 
+@login_required
 def update_guild():
     # Check request body
     try:
@@ -43,6 +45,7 @@ def update_guild():
     db.session.commit()
 
 
+@login_required
 def delete_guild():
     # Check request body
     try:

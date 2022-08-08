@@ -1,6 +1,6 @@
 from database import create_app, db
-from flask import Flask
 from routes import install_routes
+from werkzeug.security import generate_password_hash
 from yaml import safe_load
 
 
@@ -15,6 +15,8 @@ try:
     db_user = config['db']['user']
     db_pass = config['db']['password']
     db_name = config['db']['database']
+    admin_user = config['app']['admin']['user']
+    admin_pass = generate_password_hash(config['app']['admin']['password'])
 except FileNotFoundError:
     raise RuntimeError('config.yml does not exist')
 except KeyError as e:
@@ -27,6 +29,11 @@ except Exception as e:
 app = create_app(__name__, database_uri=f'postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}')
 app.app_context().push()
 db.create_all()
+
+
+# Store basic auth details for bot (admin) user
+app.config['ADMIN_USER'] = admin_user
+app.config['ADMIN_PASS'] = admin_pass
 
 
 # Add routes

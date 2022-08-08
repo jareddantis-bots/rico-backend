@@ -1,11 +1,13 @@
 from database import db
 from datetime import datetime
 from flask import jsonify, request
+from middleware.auth import login_required
 from models.guild import Guild, GuildNote
 from models.user import User, UserNote
 from uuid6 import uuid7
 
 
+@login_required
 def create_note():
     # Check request body
     try:
@@ -94,11 +96,12 @@ def create_note():
     }, 200
 
 
+@login_required
 def get_notes():
     # Check request body
     try:
         is_guild = request.json['for_guild']
-        owner = request.json['owner_id']
+        owner = request.json['owner']
 
         if not isinstance(is_guild, bool):
             raise ValueError('for_guild must be a boolean')
@@ -133,6 +136,7 @@ def get_notes():
     } for x in notes])
 
 
+@login_required
 def delete_note():
     # Check request body
     try:
