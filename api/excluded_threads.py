@@ -1,6 +1,6 @@
 from database import db
 from flask import request
-from middleware.auth import login_required
+from middleware.auth import admin_only, login_required
 from models.guild import Guild, ExcludedThread
 
 
@@ -155,4 +155,14 @@ def get_excluded_threads():
     return {
         'success': True,
         'excluded_threads': [excluded_thread.thread_id for excluded_thread in excluded_threads]
+    }, 200
+
+
+@admin_only
+def get_thread_managed_guilds():
+    # Return all guilds with manage_threads=True
+    guilds = Guild.query.filter_by(manage_threads=True).all()
+    return {
+        'success': True,
+        'guilds': [guild.id for guild in guilds]
     }, 200
