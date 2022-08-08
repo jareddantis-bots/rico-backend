@@ -142,3 +142,66 @@ def get_notes():
         'title': x.title,
         'url': x.url
     } for x in notes])
+
+
+def delete_note():
+    # Check request body
+    try:
+        for_guild = request.json['for_guild']
+        owner_id = request.json['owner']
+        note_id = request.json.get('id' '')
+        clear_all = request.json.get('clear_all', False)
+
+        if not isinstance(for_guild, bool):
+            raise ValueError('for_guild must be a boolean')
+        if not isinstance(owner_id, int):
+            raise ValueError('owner must be an integer')
+        if not isinstance(note_id, str):
+            raise ValueError('note_id must be a string')
+        if not isinstance(clear_all, bool):
+            raise ValueError('clear_all must be a boolean')
+        if not clear_all and note_id == '':
+            raise ValueError('note_id must be provided if clear_all is False')
+        if clear_all and note_id != '':
+            raise ValueError('note_id must be empty if clear_all is True')
+    except KeyError as e:
+        return {
+            'success': False,
+            'error': f'Missing key in request body: {e}'
+        }, 400
+    except ValueError as e:
+        return {
+            'success': False,
+            'error': f'Bad value: {e}'
+        }, 400
+
+    if clear_all:
+        # Get all notes in database
+        if for_guild:
+            notes = GuildNote.query.filter_by(recipient=owner_id).all()
+        else:
+            notes = UserNote.query.filter_by(recipient=owner_id).all()
+
+        # Delete all notes
+        for note in notes:
+            db.session.delete(note)
+    else:
+        # Get note from database
+        if for_guild:
+            note = GuildNote.query.get(note_id)
+        else:
+            note = UserNote.query.get(note_id)
+        if note is None:
+            return {
+                'success': False,
+                'error': 'Note does not exist in database'
+            }, 404
+
+        # Delete note from database
+        db.session.delete(note)
+
+    # Commit changes
+    db.session.commit()
+    return {
+        'success': True
+    }, 200
