@@ -21,7 +21,7 @@ def check_request(req: request, id_only: Optional[bool] = False) -> int | Tuple[
 
             if 'name' in req.json and not isinstance(guild_name, str):
                 raise ValueError('name must be a string')
-            if not 0 < len(guild_name) < 256:
+            if 'name' in req.json and not 0 < len(guild_name) < 256:
                 raise ValueError('name must be between 0 to 256 characters long')
             if 'manage_threads' in req.json and not isinstance(guild_manage_threads, bool):
                 raise ValueError('manage_threads must be a boolean')
