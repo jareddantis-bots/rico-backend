@@ -1,0 +1,11 @@
+from multiprocessing import cpu_count
+from os import path
+
+
+# Get project root directory
+PROJECT_ROOT = path.dirname(path.abspath(__file__))
+
+
+wsgi_app = 'main:app'
+bind = '0.0.0.0:5000'
+workers = cpu_count() * 2
