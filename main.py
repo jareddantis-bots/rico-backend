@@ -36,7 +36,14 @@ app.config['ADMIN_USER'] = admin_user
 app.config['ADMIN_PASS'] = admin_pass
 
 
+# Store Discord OAuth2 details
+app.config['DISCORD_CLIENT_ID'] = config['discord']['client_id']
+app.config['DISCORD_CLIENT_SECRET'] = config['discord']['client_secret']
+
+
 # Add routes
+app.config['FRONTEND_BASE_URL'] = config['frontend']['base_url']
+app.config['API_URL_PREFIX'] = '/api/v1'
 install_routes(app)
 
 
