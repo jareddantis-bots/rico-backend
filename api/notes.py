@@ -1,10 +1,37 @@
+from api import get_user_id
 from database import db
 from datetime import datetime
 from flask import jsonify, request
 from middleware.auth import login_required, admin_only, user_only
 from models.guild import Guild, GuildNote
 from models.user import User, UserNote
+from typing import Dict, List, TYPE_CHECKING
 from uuid6 import uuid7
+if TYPE_CHECKING:
+    from flask import Response
+
+
+def resolve_user(user_id: int) -> Dict[str, str] | None:
+    # Get user
+    user = User.query.get(user_id)
+    if user is None:
+        return None
+    return {
+        'username': user.username,
+        'discriminator': user.discriminator
+    }
+
+
+def jsonify_notes(notes: List[UserNote] | List[GuildNote], resolve_names: bool = False) -> 'Response':
+    return jsonify([{
+        'id': x.id,
+        'timestamp': x.timestamp.timestamp(),
+        'sender': resolve_user(x.sender) if resolve_names else x.sender,
+        'recipient': resolve_user(x.recipient) if resolve_names else x.recipient,
+        'type': x.type,
+        'title': x.title,
+        'url': x.url
+    } for x in notes])
 
 
 @admin_only
@@ -120,20 +147,19 @@ def get_notes():
 
     # Fetch all notes
     if is_guild:
-        notes = GuildNote.query.filter_by(recipient=owner).order_by(GuildNote.timestamp).all()
+        notes = GuildNote.query.filter_by(recipient=owner).order_by(GuildNote.timestamp.desc()).all()
     else:
-        notes = UserNote.query.filter_by(recipient=owner).order_by(UserNote.timestamp).all()
+        notes = UserNote.query.filter_by(recipient=owner).order_by(UserNote.timestamp.desc()).all()
 
     # Return notes
-    return jsonify([{
-        'id': x.id,
-        'timestamp': x.timestamp.timestamp(),
-        'sender': x.sender,
-        'recipient': x.recipient,
-        'type': x.type,
-        'title': x.title,
-        'url': x.url
-    } for x in notes])
+    return jsonify_notes(notes)
+
+
+@user_only
+def get_my_notes():
+    # Get user notes
+    notes = UserNote.query.filter_by(recipient=get_user_id()).order_by(UserNote.timestamp.desc()).all()
+    return jsonify_notes(notes, resolve_names=True)
 
 
 @login_required
