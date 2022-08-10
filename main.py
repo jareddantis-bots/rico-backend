@@ -1,4 +1,5 @@
 from database import create_app, db
+from middleware.logger import LoggingMiddleware
 from routes import install_routes
 from werkzeug.security import generate_password_hash
 from yaml import safe_load
@@ -49,4 +50,6 @@ install_routes(app)
 
 # Start Flask app
 if __name__ == '__main__':
+    if debug:
+        app.wsgi_app = LoggingMiddleware(app.wsgi_app)
     app.run(debug=debug)
