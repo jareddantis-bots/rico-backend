@@ -1,5 +1,5 @@
 from flask import current_app, request
-from middleware.auth import login_required
+from middleware.auth import user_only
 from models.discord_oauth2 import DiscordOAuth2
 from models.session import Session
 from typing import Any, TYPE_CHECKING
@@ -26,7 +26,7 @@ def get_discord(session_id: str, endpoint: str) -> Any:
     return response.json()
 
 
-@login_required
+@user_only
 def get_user_details():
     session_id = request.cookies.get('session_id')
 

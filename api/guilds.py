@@ -1,6 +1,6 @@
 from database import db
 from flask import request
-from middleware.auth import login_required
+from middleware.auth import login_required, admin_only
 from models.guild import Guild
 from typing import Dict, Optional, Tuple
 
@@ -42,7 +42,7 @@ def check_request(req: request, id_only: Optional[bool] = False) -> int | Tuple[
             return guild_id, guild_name, guild_manage_threads
 
 
-@login_required
+@admin_only
 def add_guild():
     # Check request body
     check_result = check_request(request)
@@ -73,7 +73,7 @@ def add_guild():
     }
 
 
-@login_required
+@admin_only
 def update_guild():
     # Check request body
     check_result = check_request(request)
@@ -102,7 +102,7 @@ def update_guild():
     }, 200
 
 
-@login_required
+@admin_only
 def delete_guild():
     # Check request body
     check_result = check_request(request, id_only=True)

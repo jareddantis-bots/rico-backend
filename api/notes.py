@@ -1,13 +1,13 @@
 from database import db
 from datetime import datetime
 from flask import jsonify, request
-from middleware.auth import login_required
+from middleware.auth import login_required, admin_only, user_only
 from models.guild import Guild, GuildNote
 from models.user import User, UserNote
 from uuid6 import uuid7
 
 
-@login_required
+@admin_only
 def create_note():
     # Check request body
     try:
@@ -96,7 +96,7 @@ def create_note():
     }, 200
 
 
-@login_required
+@admin_only
 def get_notes():
     # Check request body
     try:
