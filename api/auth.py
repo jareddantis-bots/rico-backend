@@ -90,7 +90,6 @@ def discord_oauth2_callback():
     token_response = response.json()
     if 'access_token' not in token_response:
         return 'Could not parse token response', 400
-    expires_at = time() + int(token_response['expires_in'])
 
     # Get user details
     user_response = requests.get(
@@ -132,6 +131,7 @@ def discord_oauth2_callback():
 
     # Check for existing credentials
     discord_oauth2 = DiscordOAuth2.query.filter_by(user_id=user_id).first()
+    expires_at = time() + int(token_response['expires_in'])
     if discord_oauth2 is None:
         # Store token data in DB
         discord_oauth2 = DiscordOAuth2(
@@ -155,7 +155,7 @@ def discord_oauth2_callback():
     # Redirect user to login page
     params = {
         'session_id': session_id,
-        'expires_at': int(expires_at * 1000)
+        'expires_at': int(session.expires_at.timestamp() * 1000)
     }
     base_url = current_app.config['FRONTEND_BASE_URL']
     return redirect(f'{base_url}/login?{urlencode(params)}')
