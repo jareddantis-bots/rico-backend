@@ -15,8 +15,8 @@ FROM python:3.10-slim AS main
 COPY --from=dependencies /opt/venv /opt/venv
 LABEL maintainer="Jared Dantis <jareddantis@gmail.com>"
 
-# Install psycopg2 runtime dependencies
-RUN apt-get update && apt-get install -y libpq-dev
+# Install psycopg2 runtime and healthcheck dependencies
+RUN apt-get update && apt-get install -y libpq-dev curl
 
 # Copy bot files and run bot
 COPY . /opt/app
