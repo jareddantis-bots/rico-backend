@@ -49,7 +49,7 @@ app.config['DISCORD_SESSION'] = session()
 
 # Add routes
 app.config['FRONTEND_BASE_URL'] = config['frontend']['base_url']
-app.config['API_URL_PREFIX'] = '/api/v1'
+app.config['API_URL_PREFIX'] = '/v1'
 install_routes(app)
 
 
