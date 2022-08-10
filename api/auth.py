@@ -27,7 +27,7 @@ def discord_oauth2_begin():
     base_url = 'https://discord.com/api/oauth2/authorize'
     params = {
         'client_id': current_app.config['DISCORD_CLIENT_ID'],
-        'redirect_uri': url_for('auth.discord_oauth2_callback', _external=True),
+        'redirect_uri': current_app.config['DISCORD_CALLBACK_URI'],
         'response_type': 'code',
         'scope': ' '.join([
             'identify',
@@ -72,7 +72,7 @@ def discord_oauth2_callback():
         'client_secret': current_app.config['DISCORD_CLIENT_SECRET'],
         'grant_type': 'authorization_code',
         'code': request.args['code'],
-        'redirect_uri': url_for('auth.discord_oauth2_callback', _external=True)
+        'redirect_uri': current_app.config['DISCORD_CALLBACK_URI']
     }
 
     # Exchange OAuth2 code for token

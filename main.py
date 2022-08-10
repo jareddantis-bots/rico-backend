@@ -39,6 +39,7 @@ app.config['ADMIN_PASS'] = admin_pass
 
 
 # Store Discord OAuth2 details
+app.config['DISCORD_CALLBACK_URI'] = config['discord']['callback_uri']
 app.config['DISCORD_CLIENT_ID'] = config['discord']['client_id']
 app.config['DISCORD_CLIENT_SECRET'] = config['discord']['client_secret']
 
