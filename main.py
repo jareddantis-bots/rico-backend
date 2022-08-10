@@ -1,5 +1,6 @@
 from database import create_app, db
 from middleware.logger import LoggingMiddleware
+from requests import session
 from routes import install_routes
 from werkzeug.security import generate_password_hash
 from yaml import safe_load
@@ -40,6 +41,10 @@ app.config['ADMIN_PASS'] = admin_pass
 # Store Discord OAuth2 details
 app.config['DISCORD_CLIENT_ID'] = config['discord']['client_id']
 app.config['DISCORD_CLIENT_SECRET'] = config['discord']['client_secret']
+
+
+# Create Discord API session
+app.config['DISCORD_SESSION'] = session()
 
 
 # Add routes
