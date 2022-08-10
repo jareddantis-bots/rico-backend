@@ -7,10 +7,12 @@ from typing import Callable
 from werkzeug.security import check_password_hash
 
 
-UNAUTHORIZED = ({
-    'success': False,
-    'error': 'Unauthorized'
-}, 401)
+def unauthorized(reason: str):
+    return ({
+        'success': False,
+        'error': 'Unauthorized',
+        'reason': reason
+    }, 401)
 
 
 def login_required(f: Callable):
@@ -26,34 +28,34 @@ def login_required(f: Callable):
                 # Check if username and password match.
                 if not (auth.username == current_app.config['ADMIN_USER'] and
                         check_password_hash(current_app.config['ADMIN_PASS'], auth.password)):
-                    return UNAUTHORIZED
+                    return unauthorized('Unrecognized credentials')
             else:
                 # Client is attempting to authenticate using a method other than Basic.
-                return UNAUTHORIZED
+                return unauthorized('Unrecognized auth method')
         else:
             # Client is not attempting to authenticate using the Authentication header.
 
             if not session_id:
                 # Client did not provide either an authorization header or a session ID cookie.
-                return UNAUTHORIZED
+                return unauthorized('No credentials provided')
 
             # Check if session is in DB
             session = Session.query.filter_by(id=session_id).first()
             if session is None:
-                return UNAUTHORIZED
+                return unauthorized('Invalid session ID')
 
             # Check if session is expired
             if session.expires_at < datetime.now():
-                return UNAUTHORIZED
+                return unauthorized('Session expired')
 
             # Check if Discord tokens are in DB
             discord_oauth2 = DiscordOAuth2.query.filter_by(session_id=session_id).first()
             if discord_oauth2 is None:
-                return UNAUTHORIZED
+                return unauthorized('Discord tokens not found')
 
             # Check if Discord tokens are expired
             if discord_oauth2.expires_at < datetime.now():
-                return UNAUTHORIZED
+                return unauthorized('Discord tokens expired')
 
         return f(*args, **kwargs)
 
@@ -66,16 +68,16 @@ def admin_only(f: Callable):
         auth = request.authorization
 
         if not auth:
-            return UNAUTHORIZED
+            return unauthorized('No credentials provided')
 
         if auth.password is not None:
             # Client is attempting to authenticate as admin.
             # Check if username and password match.
             if not (auth.username == current_app.config['ADMIN_USER'] and
                     check_password_hash(current_app.config['ADMIN_PASS'], auth.password)):
-                return UNAUTHORIZED
+                return unauthorized('Unrecognized credentials')
         else:
-            return UNAUTHORIZED
+            return unauthorized('Unrecognized auth method')
 
         return f(*args, **kwargs)
 
