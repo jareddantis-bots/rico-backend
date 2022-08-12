@@ -1,4 +1,5 @@
 from database import create_app, db
+from flask_cors import CORS
 from middleware.logger import LoggingMiddleware
 from requests import session
 from routes import install_routes
@@ -48,9 +49,18 @@ app.config['DISCORD_CLIENT_SECRET'] = config['discord']['client_secret']
 app.config['DISCORD_SESSION'] = session()
 
 
+# Enable CORS
+api_prefix = config['app']['cors']['prefix']
+cors = CORS(app, resources={
+    rf'{api_prefix}/*': {
+        'origins': config['app']['cors']['origin'],
+        'allow_headers': ['authorization', 'content-type']
+    }
+})
+
+
 # Add routes
-app.config['FRONTEND_BASE_URL'] = config['frontend']['base_url']
-app.config['API_URL_PREFIX'] = '/v1'
+app.config['API_URL_PREFIX'] = api_prefix
 install_routes(app)
 
 
