@@ -61,7 +61,7 @@ def login_required(f: Callable):
     @wraps(f)
     def wrapped(*args, **kwargs):
         auth = request.authorization
-        session_id = request.cookies.get('session_id')
+        auth_method, session_id = request.headers.get('Authorization', '').split(' ')
 
         if auth is not None:
             try:
@@ -71,12 +71,14 @@ def login_required(f: Callable):
             except ValueError as e:
                 return unauthorized(e)
 
-        if session_id is not None:
+        if auth_method == 'Bearer' and session_id is not None:
             # Client is not attempting to authenticate using the Authentication header.
             try:
                 check_cookie(session_id)
             except Exception as e:
                 return unauthorized(e)
+        else:
+            return unauthorized('Unrecognized authentication method')
 
         return f(*args, **kwargs)
 
@@ -101,12 +103,15 @@ def admin_only(f: Callable):
 def user_only(f: Callable):
     @wraps(f)
     def wrapped(*args, **kwargs):
-        session_id = request.cookies.get('session_id')
+        auth_method, session_id = request.headers.get('Authorization', '').split(' ')
 
-        try:
-            check_cookie(session_id)
-        except Exception as e:
-            return unauthorized(e)
+        if auth_method == 'Bearer' and session_id is not None:
+            try:
+                check_cookie(session_id)
+            except Exception as e:
+                return unauthorized(e)
+        else:
+            return unauthorized('Unrecognized authentication method')
 
         return f(*args, **kwargs)
 
