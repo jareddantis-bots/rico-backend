@@ -1,6 +1,6 @@
 from database import db
 from datetime import datetime
-from flask import current_app, make_response, redirect, request, url_for
+from flask import current_app, make_response, redirect, request
 from models.discord_oauth2 import DiscordOAuth2
 from models.session import Session
 from models.user import User
@@ -38,31 +38,21 @@ def discord_oauth2_begin():
     }
     url = f'{base_url}?{urlencode(params)}'
 
-    # Create redirect response with session ID in cookie
+    # Create redirect response
     response = make_response(redirect(url))
-    response.set_cookie('session_id', session_id)
     return response
 
 
 def discord_oauth2_callback():
     # Check request body
-    if 'code' not in request.args:
+    if 'code' not in request.json:
         return 'Missing code', 400
-    if 'state' not in request.args:
+    if 'state' not in request.json:
         return 'Missing state', 400
 
-    # Check session ID in cookie
-    session_id = request.cookies.get('session_id')
-    if not session_id:
-        return 'Missing session ID', 400
-
-    # Check session in DB
-    session = Session.query.filter_by(id=session_id).first()
+    # Check for state in session table
+    session = Session.query.filter_by(state=request.json['state']).first()
     if session is None:
-        return 'Invalid session ID', 400
-
-    # Check state in request body
-    if request.args['state'] != session.state:
         return 'Invalid state', 400
 
     # Form URL for OAuth2 token exchange
@@ -71,7 +61,7 @@ def discord_oauth2_callback():
         'client_id': current_app.config['DISCORD_CLIENT_ID'],
         'client_secret': current_app.config['DISCORD_CLIENT_SECRET'],
         'grant_type': 'authorization_code',
-        'code': request.args['code'],
+        'code': request.json['code'],
         'redirect_uri': current_app.config['DISCORD_CALLBACK_URI']
     }
 
@@ -84,11 +74,15 @@ def discord_oauth2_callback():
         }
     )
     if response.status_code != 200:
+        db.session.delete(session)
+        db.session.commit()
         return 'Could not exchange code for token', response.status_code
 
     # Parse token response
     token_response = response.json()
     if 'access_token' not in token_response:
+        db.session.delete(session)
+        db.session.commit()
         return 'Could not parse token response', 400
 
     # Get user details
@@ -99,6 +93,8 @@ def discord_oauth2_callback():
         }
     )
     if user_response.status_code != 200:
+        db.session.delete(session)
+        db.session.commit()
         return 'Could not get user details', user_response.status_code
 
     # Parse user details response
@@ -108,6 +104,8 @@ def discord_oauth2_callback():
         user_name = user_details['user']['username']
         user_discriminator = user_details['user']['discriminator']
     except KeyError:
+        db.session.delete(session)
+        db.session.commit()
         return 'Could not parse user details', 400
 
     # Check if user exists in DB
@@ -131,31 +129,30 @@ def discord_oauth2_callback():
 
     # Check for existing credentials
     discord_oauth2 = DiscordOAuth2.query.filter_by(user_id=user_id).first()
-    expires_at = time() + int(token_response['expires_in'])
+    expires_at = datetime.fromtimestamp(time() + int(token_response['expires_in']))
     if discord_oauth2 is None:
         # Store token data in DB
         discord_oauth2 = DiscordOAuth2(
             user_id=user_id,
             access_token=token_response['access_token'],
             refresh_token=token_response['refresh_token'],
-            expires_at=datetime.fromtimestamp(expires_at),
-            session_id=session_id
+            expires_at=expires_at,
+            session_id=session.id
         )
         db.session.add(discord_oauth2)
     else:
         # Update existing token data in DB
         discord_oauth2.access_token = token_response['access_token']
         discord_oauth2.refresh_token = token_response['refresh_token']
-        discord_oauth2.expires_at = datetime.fromtimestamp(expires_at)
-        discord_oauth2.session_id = session_id
+        discord_oauth2.expires_at = expires_at
+        discord_oauth2.session_id = session.id
 
     # Save changes to DB
     db.session.commit()
 
-    # Redirect user to login page
-    params = {
-        'session_id': session_id,
-        'expires_at': int(session.expires_at.timestamp() * 1000)
-    }
-    base_url = current_app.config['FRONTEND_BASE_URL']
-    return redirect(f'{base_url}/login?{urlencode(params)}')
+    # Return details
+    return {
+        'session_id': session.id,
+        'expires_at': int(session.expires_at.timestamp() * 1000),
+        'user': user_details['user']
+    }, 200
