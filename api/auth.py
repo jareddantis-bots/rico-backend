@@ -121,8 +121,8 @@ def discord_oauth2_callback():
 
     # Remove existing sessions for this user
     sessions = Session.query.filter_by(user_id=user_id).all()
-    for session in sessions:
-        db.session.delete(session)
+    for s in sessions:
+        db.session.delete(s)
 
     # Update session with user ID
     session.user_id = user_id
