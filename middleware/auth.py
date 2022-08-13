@@ -61,7 +61,7 @@ def login_required(f: Callable):
     @wraps(f)
     def wrapped(*args, **kwargs):
         auth = request.authorization
-        auth_method, session_id = request.headers.get('Authorization', '').split(' ')
+        auth_header = request.headers.get('Authorization', ' ').split(' ')
 
         if auth is not None:
             # Client is attempting to authenticate using Basic authentication.
@@ -69,14 +69,18 @@ def login_required(f: Callable):
                 check_basic_auth(auth)
             except Exception as e:
                 return unauthorized(e)
-        elif auth_method == 'Bearer' and session_id is not None:
-            # Client is attempting to authenticate using Bearer authentication.
-            try:
-                check_cookie(session_id)
-            except Exception as e:
-                return unauthorized(e)
+        elif len(auth_header) == 2:
+            auth_method, session_id = auth_header
+            if auth_method == 'Bearer' and session_id is not None:
+                # Client is attempting to authenticate using Bearer authentication.
+                try:
+                    check_cookie(session_id)
+                except Exception as e:
+                    return unauthorized(e)
+            else:
+                return unauthorized('Invalid authentication header')
         else:
-            return unauthorized('Invalid or missing authentication')
+            return unauthorized('Missing authentication header')
 
         return f(*args, **kwargs)
 
@@ -101,15 +105,18 @@ def admin_only(f: Callable):
 def user_only(f: Callable):
     @wraps(f)
     def wrapped(*args, **kwargs):
-        auth_method, session_id = request.headers.get('Authorization', '').split(' ')
+        try:
+            auth_method, session_id = request.headers.get('Authorization', '').split(' ')
 
-        if auth_method == 'Bearer' and session_id is not None:
-            try:
-                check_cookie(session_id)
-            except Exception as e:
-                return unauthorized(e)
-        else:
-            return unauthorized('Unrecognized authentication method')
+            if auth_method == 'Bearer' and session_id is not None:
+                try:
+                    check_cookie(session_id)
+                except Exception as e:
+                    return unauthorized(e)
+            else:
+                return unauthorized('Unrecognized authentication method')
+        except ValueError:
+            return unauthorized('Missing authentication header')
 
         return f(*args, **kwargs)
 
