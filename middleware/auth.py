@@ -64,21 +64,19 @@ def login_required(f: Callable):
         auth_method, session_id = request.headers.get('Authorization', '').split(' ')
 
         if auth is not None:
+            # Client is attempting to authenticate using Basic authentication.
             try:
                 check_basic_auth(auth)
-            except RuntimeError:
-                pass
-            except ValueError as e:
+            except Exception as e:
                 return unauthorized(e)
-
-        if auth_method == 'Bearer' and session_id is not None:
-            # Client is not attempting to authenticate using the Authentication header.
+        elif auth_method == 'Bearer' and session_id is not None:
+            # Client is attempting to authenticate using Bearer authentication.
             try:
                 check_cookie(session_id)
             except Exception as e:
                 return unauthorized(e)
         else:
-            return unauthorized('Unrecognized authentication method')
+            return unauthorized('Invalid or missing authentication')
 
         return f(*args, **kwargs)
 
