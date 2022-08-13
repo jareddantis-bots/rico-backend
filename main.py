@@ -12,7 +12,8 @@ try:
     with open('config.yml') as f:
         config = safe_load(f)
 
-    debug = config['app']['debug']
+    debug = config['app']['debug']['enabled']
+    enable_middleware = config['app']['debug']['middleware_enabled']
     db_host = config['db']['host']
     db_port = config['db']['port']
     db_user = config['db']['user']
@@ -66,6 +67,6 @@ install_routes(app)
 
 # Start Flask app
 if __name__ == '__main__':
-    if debug:
+    if enable_middleware:
         app.wsgi_app = LoggingMiddleware(app.wsgi_app)
     app.run(debug=debug)
