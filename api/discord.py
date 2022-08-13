@@ -1,9 +1,11 @@
-from flask import current_app, request
+from api import get_user_id
+from flask import current_app, jsonify, request
 from middleware.auth import user_only
 from models.discord_oauth2 import DiscordOAuth2
 from models.session import Session
 from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
+    from nextcord.ext import ipc
     from requests import Session
 
 
@@ -44,3 +46,9 @@ def get_user_details():
             'success': False,
             'error': str(e)
         }, 400
+
+
+@user_only
+async def get_mutual_guilds():
+    client: 'ipc.Client' = current_app.config['BOT_IPC']
+    return jsonify(await client.request('get_mutual_guilds', user_id=get_user_id())), 200
